@@ -10,11 +10,20 @@ unset GIT_DIR     # Avoid GIT_DIR leak from previous build steps
 
 ### Constants
 
+GETTEXT_BINARY="http://heroku-monit.s3.amazonaws.com/gettext-0.18.tgz"
+GETTEXT_VENDOR="vendor/gettext"
+
 DEFAULT_CACHE="node_modules bower_components"
 
 ### Configure directories
 
+ORIGINAL_BUILD_DIR=${1:-}
 BUILD_DIR=${1:-}
+
+if [ -f $BUILD_DIR/.builddir ]; then
+  BUILD_DIR=$BUILD_DIR`cat $BUILD_DIR/.builddir`
+fi
+
 CACHE_DIR=${2:-}
 ENV_DIR=${3:-}
 BP_DIR=$(cd $(dirname ${0:-}); cd ..; pwd)
@@ -59,7 +68,7 @@ warn_missing_package_json "$BUILD_DIR"
 ### Compile
 
 create_env() {
-  write_profile "$BP_DIR" "$BUILD_DIR"
+  write_profile "$BP_DIR" "$BUILD_DIR" "$ORIGINAL_BUILD_DIR"
   write_export "$BP_DIR" "$BUILD_DIR"
   export_env_dir "$ENV_DIR"
   create_default_env
@@ -67,6 +76,12 @@ create_env() {
 
 header "Creating runtime environment"
 create_env # can't pipe the whole thing because piping causes subshells, preventing exports
+if [ -f $ORIGINAL_BUILD_DIR/.builddir ]; then
+  ls $BUILD_DIR/.profile.d
+  echo $BUILD_DIR/.profile.d $ORIGINAL_BUILD_DIR/.profile.d
+  mv $BUILD_DIR/.profile.d $ORIGINAL_BUILD_DIR/.profile.d
+  ls $ORIGINAL_BUILD_DIR/.profile.d
+fi
 list_node_config | output "$LOG_FILE"
 
 install_bins() {

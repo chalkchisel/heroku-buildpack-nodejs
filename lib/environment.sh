@@ -35,8 +35,13 @@ export_env_dir() {
 write_profile() {
   local bp_dir="$1"
   local build_dir="$2"
+  local original_build_dir="$3"
   mkdir -p $build_dir/.profile.d
   cp $bp_dir/profile/* $build_dir/.profile.d/
+
+  export BUILDDIR=`cat $original_build_dir/.builddir`
+  sed 's/__BUILD_DIR__/\'"$BUILDDIR"'/g' "$build_dir/.profile.d/nodejs.sh" >"$build_dir/.profile.d/nodejs.sh.tmp" && mv "$build_dir/.profile.d/nodejs.sh.tmp" "$build_dir/.profile.d/nodejs.sh"
+  unset BUILDDIR
 }
 
 write_export() {
